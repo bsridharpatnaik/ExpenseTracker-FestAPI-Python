@@ -70,10 +70,14 @@ async def get_summary(
         .all()
     )
     
-    carry_forward = sum(
-        float(t.amount) if t.transaction_type == "INCOME" else -float(t.amount)
-        for t in previous_transactions
+    carry_forward = db.query(
+    func.sum(
+        case(
+            (Transaction.transaction_type == "INCOME", Transaction.amount),
+            else_=-Transaction.amount
+        )
     )
+    ).filter(func.date(Transaction.date) < date.date()).scalar() or 0
 
     return {
         "transactionsByType": transactions_by_type,
